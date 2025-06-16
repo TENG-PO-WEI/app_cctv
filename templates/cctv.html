@@ -8,15 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Inter 字體，提供更好的閱讀體驗 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <!-- 引入 hls.js 函式庫 CDN，用於播放 HLS (.m3u8) 串流 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         /* 設定基本字體和背景顏色 */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
-        }
-        /* 隱藏自訂訊息框直到需要顯示 */
-        #customMessageBox {
-            display: none;
         }
     </style>
 </head>
@@ -32,37 +30,62 @@
             <!-- muted: 靜音 (方便自動播放，避免打擾使用者) -->
             <!-- loop: 循環播放 -->
             <video id="cctvVideo" controls autoplay muted loop class="absolute top-0 left-0 w-full h-full object-cover rounded-lg">
-                <!-- source 標籤直接指向影像 URL 及其 MIME 類型 -->
-                <!-- application/x-mpegURL 是 HLS 串流的常用 MIME 類型 (.m3u8) -->
-                <source src="https://trafficvideo4.tainan.gov.tw/7c26a9dd" type="application/x-mpegURL">
+                <!-- source 標籤指向影像 URL 及其 MIME 類型，URL 從 Flask 傳遞過來 -->
+                <source src="{{ cctv_url }}" type="application/x-mpegURL">
                 <!-- 當瀏覽器不支援 video 標籤時顯示的備用訊息 -->
                 您的瀏覽器不支援影像標籤，請嘗試更新您的瀏覽器。
             </video>
         </div>
         <p class="text-sm text-gray-600 mt-4 text-center">
-            影像來源：直接在 HTML 中定義
+            影像來源：從 Flask 應用程式載入
         </p>
     </div>
 
-    <!-- 自訂訊息框 HTML 結構 -->
-    <!-- 如果應用程式不再需要任何訊息提示，您可以移除整個區塊和相關的 JavaScript -->
-    <div id="customMessageBox" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
-            <p id="messageBoxText" class="text-lg mb-4"></p>
-            <button id="closeMessageBox" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">確認</button>
-        </div>
-    </div>
-
     <script>
-        // 僅保留自訂訊息框的關閉功能，如果不需要訊息框，整個 script 區塊也可移除
         document.addEventListener('DOMContentLoaded', () => {
-            const customMessageBox = document.getElementById('customMessageBox');
-            const closeMessageBox = document.getElementById('closeMessageBox');
+            const videoElement = document.getElementById('cctvVideo');
+            // 從 <source> 標籤中獲取影像 URL，這會是 Jinja2 替換後的實際 URL
+            const videoSourceElement = videoElement.querySelector('source');
+            const videoUrl = videoSourceElement ? videoSourceElement.src : null;
 
-            // 關閉自訂訊息框按鈕的點擊事件監聽器
-            closeMessageBox.addEventListener('click', () => {
-                customMessageBox.style.display = 'none'; // 隱藏訊息框
-            });
+            if (videoUrl) {
+                // 檢查瀏覽器是否支援 HLS.js
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    // 將 HLS 實例附加到 video 元素
+                    hls.attachMedia(videoElement);
+                    // 監聽 HLS 載入媒體事件
+                    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+                        console.log('Media attached!');
+                        hls.loadSource(videoUrl); // 載入 HLS 串流來源
+                    });
+
+                    // 監聽 HLS 錯誤事件，方便除錯
+                    hls.on(Hls.Events.ERROR, function (event, data) {
+                        let errorType = data.type;
+                        let errorDetails = data.details;
+                        let errorFatal = data.fatal;
+                        console.error(`HLS Error: Type - ${errorType}, Details - ${errorDetails}, Fatal - ${errorFatal}`);
+                        // 如果是致命錯誤，嘗試銷毀 HLS 實例並重新建立 (這裡簡化處理，實際應用中應有更完善的錯誤回復機制)
+                        if (data.fatal) {
+                            hls.destroy();
+                            console.error('致命 HLS 錯誤，請檢查網路連線或影像來源。');
+                        }
+                    });
+                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                    // 如果瀏覽器原生支援 HLS (例如 Safari)，則直接播放
+                    videoElement.src = videoUrl; // 雖然 Jinja2 已經設定，但為明確性再次設定
+                    videoElement.addEventListener('loadedmetadata', function() {
+                        videoElement.play();
+                    });
+                } else {
+                    // 如果瀏覽器完全不支援 HLS，顯示錯誤訊息到控制台
+                    console.error('您的瀏覽器不支援 HLS 影像播放。');
+                    // 可以在這裡進一步提示使用者
+                }
+            } else {
+                console.error('未找到影像 URL，請檢查 HTML 中的 <source> 標籤。');
+            }
         });
     </script>
 </body>
