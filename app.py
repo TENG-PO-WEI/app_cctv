@@ -1,9 +1,8 @@
-import os
 from flask import Flask, render_template
 
 app = Flask(__name__) # __name__代表目前執行的模組
 
-@app.route("/") # 將CCTV頁面設定為網站的根目錄首頁
+@app.route("/") # 將CCTV頁面設定為網站的首頁
 def cctv():
     # 定義CCTV影像的URL
     cctv_url = 'https://trafficvideo4.tainan.gov.tw/7c26a9dd'
