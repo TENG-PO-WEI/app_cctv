@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CCTV 即時影像</title>
-    <!-- 引入 Tailwind CSS CDN，用於快速造型 -->
+    <!-- 引入Tailwind CSS CDN，用於快速造型 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Inter 字體，提供更好的閱讀體驗 -->
+    <!-- 引入Inter字體，提供更好的閱讀體驗 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <!-- 引入 hls.js 函式庫 CDN，用於播放 HLS (.m3u8) 串流 -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         /* 設定基本字體和背景顏色 */
         body {
@@ -21,72 +19,24 @@
 <body class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
         <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">台南CCTV即時影像</h1>
-
-        <!-- 影像容器，使用 padding-bottom 技巧保持 16:9 的寬高比，並確保影像響應式顯示 -->
+        <!-- 影像容器，使用padding-bottom技巧保持16:9的寬高比，並確保影像響應式顯示 -->
         <div class="relative pb-[56.25%] h-0 overflow-hidden rounded-lg bg-black">
-            <!-- video 標籤用於嵌入影像 -->
+            <!-- video標籤用於嵌入影像 -->
             <!-- controls: 顯示播放控制項 -->
-            <!-- autoplay: 自動播放 (建議搭配 muted 使用，避免突然的音效) -->
+            <!-- autoplay: 自動播放 (通常建議搭配muted使用，避免突然的音效) -->
             <!-- muted: 靜音 (方便自動播放，避免打擾使用者) -->
             <!-- loop: 循環播放 -->
-            <video id="cctvVideo" controls autoplay muted loop class="absolute top-0 left-0 w-full h-full object-cover rounded-lg">
-                <!-- source 標籤指向影像 URL 及其 MIME 類型，URL 從 Flask 傳遞過來 -->
+            <video controls autoplay muted loop class="absolute top-0 left-0 w-full h-full object-cover rounded-lg">
+                <!-- source標籤指向影像URL及其MIME類型 -->
+                <!-- application/x-mpegURL 是HLS串流的常用MIME類型 (.m3u8) -->
                 <source src="{{ cctv_url }}" type="application/x-mpegURL">
-                <!-- 當瀏覽器不支援 video 標籤時顯示的備用訊息 -->
+                <!-- 當瀏覽器不支援video標籤時顯示的備用訊息 -->
                 您的瀏覽器不支援影像標籤，請嘗試更新您的瀏覽器。
             </video>
         </div>
         <p class="text-sm text-gray-600 mt-4 text-center">
-            影像來源：從 Flask 應用程式載入
+            影像來源：台南市政府交通局
         </p>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const videoElement = document.getElementById('cctvVideo');
-            // 從 <source> 標籤中獲取影像 URL，這會是 Jinja2 替換後的實際 URL
-            const videoSourceElement = videoElement.querySelector('source');
-            const videoUrl = videoSourceElement ? videoSourceElement.src : null;
-
-            if (videoUrl) {
-                // 檢查瀏覽器是否支援 HLS.js
-                if (Hls.isSupported()) {
-                    const hls = new Hls();
-                    // 將 HLS 實例附加到 video 元素
-                    hls.attachMedia(videoElement);
-                    // 監聽 HLS 載入媒體事件
-                    hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-                        console.log('Media attached!');
-                        hls.loadSource(videoUrl); // 載入 HLS 串流來源
-                    });
-
-                    // 監聽 HLS 錯誤事件，方便除錯
-                    hls.on(Hls.Events.ERROR, function (event, data) {
-                        let errorType = data.type;
-                        let errorDetails = data.details;
-                        let errorFatal = data.fatal;
-                        console.error(`HLS Error: Type - ${errorType}, Details - ${errorDetails}, Fatal - ${errorFatal}`);
-                        // 如果是致命錯誤，嘗試銷毀 HLS 實例並重新建立 (這裡簡化處理，實際應用中應有更完善的錯誤回復機制)
-                        if (data.fatal) {
-                            hls.destroy();
-                            console.error('致命 HLS 錯誤，請檢查網路連線或影像來源。');
-                        }
-                    });
-                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                    // 如果瀏覽器原生支援 HLS (例如 Safari)，則直接播放
-                    videoElement.src = videoUrl; // 雖然 Jinja2 已經設定，但為明確性再次設定
-                    videoElement.addEventListener('loadedmetadata', function() {
-                        videoElement.play();
-                    });
-                } else {
-                    // 如果瀏覽器完全不支援 HLS，顯示錯誤訊息到控制台
-                    console.error('您的瀏覽器不支援 HLS 影像播放。');
-                    // 可以在這裡進一步提示使用者
-                }
-            } else {
-                console.error('未找到影像 URL，請檢查 HTML 中的 <source> 標籤。');
-            }
-        });
-    </script>
 </body>
 </html>
