@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CCTV 即時影像</title>
-    <!-- 引入Tailwind CSS CDN，用於快速造型 -->
+    <!-- 引入 Tailwind CSS CDN，用於快速造型 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入Inter字體，提供更好的閱讀體驗 -->
+    <!-- 引入 Inter 字體，提供更好的閱讀體驗 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         /* 設定基本字體和背景顏色 */
@@ -14,29 +14,56 @@
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
         }
+        /* 隱藏自訂訊息框直到需要顯示 */
+        #customMessageBox {
+            display: none;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
         <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">台南CCTV即時影像</h1>
-        <!-- 影像容器，使用padding-bottom技巧保持16:9的寬高比，並確保影像響應式顯示 -->
+
+        <!-- 影像容器，使用 padding-bottom 技巧保持 16:9 的寬高比，並確保影像響應式顯示 -->
         <div class="relative pb-[56.25%] h-0 overflow-hidden rounded-lg bg-black">
-            <!-- video標籤用於嵌入影像 -->
+            <!-- video 標籤用於嵌入影像 -->
             <!-- controls: 顯示播放控制項 -->
-            <!-- autoplay: 自動播放 (通常建議搭配muted使用，避免突然的音效) -->
+            <!-- autoplay: 自動播放 (建議搭配 muted 使用，避免突然的音效) -->
             <!-- muted: 靜音 (方便自動播放，避免打擾使用者) -->
             <!-- loop: 循環播放 -->
-            <video controls autoplay muted loop class="absolute top-0 left-0 w-full h-full object-cover rounded-lg">
-                <!-- source標籤指向影像URL及其MIME類型 -->
-                <!-- application/x-mpegURL 是HLS串流的常用MIME類型 (.m3u8) -->
-                <source src="{{ cctv_url }}" type="application/x-mpegURL">
-                <!-- 當瀏覽器不支援video標籤時顯示的備用訊息 -->
+            <video id="cctvVideo" controls autoplay muted loop class="absolute top-0 left-0 w-full h-full object-cover rounded-lg">
+                <!-- source 標籤直接指向影像 URL 及其 MIME 類型 -->
+                <!-- application/x-mpegURL 是 HLS 串流的常用 MIME 類型 (.m3u8) -->
+                <source src="https://trafficvideo4.tainan.gov.tw/7c26a9dd" type="application/x-mpegURL">
+                <!-- 當瀏覽器不支援 video 標籤時顯示的備用訊息 -->
                 您的瀏覽器不支援影像標籤，請嘗試更新您的瀏覽器。
             </video>
         </div>
         <p class="text-sm text-gray-600 mt-4 text-center">
-            影像來源：台南市政府交通局
+            影像來源：直接在 HTML 中定義
         </p>
     </div>
+
+    <!-- 自訂訊息框 HTML 結構 -->
+    <!-- 如果應用程式不再需要任何訊息提示，您可以移除整個區塊和相關的 JavaScript -->
+    <div id="customMessageBox" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+            <p id="messageBoxText" class="text-lg mb-4"></p>
+            <button id="closeMessageBox" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">確認</button>
+        </div>
+    </div>
+
+    <script>
+        // 僅保留自訂訊息框的關閉功能，如果不需要訊息框，整個 script 區塊也可移除
+        document.addEventListener('DOMContentLoaded', () => {
+            const customMessageBox = document.getElementById('customMessageBox');
+            const closeMessageBox = document.getElementById('closeMessageBox');
+
+            // 關閉自訂訊息框按鈕的點擊事件監聽器
+            closeMessageBox.addEventListener('click', () => {
+                customMessageBox.style.display = 'none'; // 隱藏訊息框
+            });
+        });
+    </script>
 </body>
 </html>
