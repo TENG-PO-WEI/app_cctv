@@ -1,13 +1,7 @@
 import os
 from flask import Flask, render_template
 
-# 取得目前檔案的絕對路徑
-basedir = os.path.abspath(os.path.dirname(__file__))
-
-template_folder_path = os.path.join(basedir, 'templates')
-
-#app = Flask(__name__) # __name__代表目前執行的模組
-app = Flask(__name__, template_folder=template_folder_path)
+app = Flask(__name__) # __name__代表目前執行的模組
 
 @app.route("/") # 將CCTV頁面設定為網站的根目錄首頁
 def cctv():
